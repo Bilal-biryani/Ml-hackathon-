@@ -48,7 +48,12 @@ def main():
     logs = []
     for part, d in (("train", config.TRAIN_DIR), ("student_test", config.STUDENT_TEST_DIR)):
         trips = list_trips(d)
-        res = Parallel(n_jobs=8, verbose=0)(delayed(build_one)(t, part) for t in trips)
+        if not trips:
+            raise FileNotFoundError(
+                f"No trip folders found in {d}. Place the unchanged college-provided "
+                f"{part} partition there before building processed tables."
+            )
+        res = Parallel(n_jobs=config.BUILD_JOBS, verbose=0)(delayed(build_one)(t, part) for t in trips)
         cands = pd.concat([r[0] for r in res], ignore_index=True)
         obs = pd.concat([r[1] for r in res], ignore_index=True)
         logs += [r[2] for r in res]

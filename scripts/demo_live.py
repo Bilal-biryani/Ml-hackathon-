@@ -1,4 +1,4 @@
-"""Review 1 live demo: train two models on one trip-grouped fold in about a minute and print the scores.
+"""Review 1 live demo: train two lightweight models on one trip-grouped fold and print the scores.
 
 Usage (from the project folder):  python scripts/demo_live.py
 Needs data/processed/ (run scripts/02_build_dataset.py first). It writes NO files, so the
@@ -35,7 +35,12 @@ c_val = cands[cands.trip_id.isin(val_trips)]
 o_val = obs[obs.trip_id.isin(val_trips)]
 ev = eval_rows_mask(c_val, o_val)
 
-for name, factory in (("Logistic Regression", make_logistic_regression), ("LightGBM", make_lgbm)):
+demo_models = (
+    ("Logistic Regression", make_logistic_regression),
+    ("LightGBM", lambda: make_lgbm(n_estimators=50, num_leaves=31, n_jobs=min(4, config.N_JOBS))),
+)
+
+for name, factory in demo_models:
     t0 = time.time()
     m = factory().fit(X[tri], y[tri])
     fit_s = time.time() - t0

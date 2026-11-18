@@ -71,8 +71,16 @@ def inventory():
 
 def plots(inv):
     tr = inv[inv.partition == "train"]
-    obs = pd.read_pickle(config.PROCESSED_DIR / "train_obs.pkl")
-    cands = pd.read_pickle(config.PROCESSED_DIR / "train_cands.pkl")
+    obs_path = config.PROCESSED_DIR / "train_obs.pkl"
+    cands_path = config.PROCESSED_DIR / "train_cands.pkl"
+    have_processed = obs_path.exists() and cands_path.exists()
+    obs = pd.read_pickle(obs_path) if have_processed else None
+    cands = pd.read_pickle(cands_path) if have_processed else None
+    if not have_processed:
+        print(
+            "Processed candidate tables are not present. Running raw-data EDA only; "
+            "candidate/feature diagnostics will be available after scripts/02_build_dataset.py."
+        )
 
     fig, ax = plt.subplots(1, 3, figsize=(15, 4))
     ax[0].hist(inv.n_fixes, bins=30, color="#3366cc"); ax[0].set_title("GPS fixes per trip (train+student-test)"); ax[0].set_xlabel("fixes")
@@ -90,9 +98,13 @@ def plots(inv):
     s = inv.sort_values("missing_1hz_fixes", ascending=False).head(15)
     ax[0].barh(s.trip_id, s.missing_1hz_fixes / (s.duration_s + 1) * 100, color="#ff9900"); ax[0].invert_yaxis()
     ax[0].set_xlabel("% of expected 1 Hz fixes missing"); ax[0].set_title("Implied missing fixes (top 15 trips, both partitions)")
-    far = obs.groupby("trip_id").align_dist.apply(lambda s: (s > 50).mean() * 100).sort_values(ascending=False).head(15)
-    ax[1].barh(far.index, far.values, color="#990099"); ax[1].invert_yaxis()
-    ax[1].set_xlabel("% fixes > 50 m from reference route"); ax[1].set_title("Reference-route coverage problems (train)")
+    if have_processed:
+        far = obs.groupby("trip_id").align_dist.apply(lambda s: (s > 50).mean() * 100).sort_values(ascending=False).head(15)
+        ax[1].barh(far.index, far.values, color="#990099"); ax[1].invert_yaxis()
+        ax[1].set_xlabel("% fixes > 50 m from reference route"); ax[1].set_title("Reference-route coverage problems (train)")
+    else:
+        ax[1].axis("off")
+        ax[1].text(0.5, 0.5, "Candidate diagnostics require\n02_build_dataset.py", ha="center", va="center")
     fig.tight_layout(); fig.savefig(FIG / "eda_missing_gaps.png"); plt.close(fig)
 
     # GPS trajectory plots (all train trips) in lon/lat
@@ -137,36 +149,38 @@ def plots(inv):
     ax.set_title(f"Zoom (300 m window) on train trip {tid}")
     fig.tight_layout(); fig.savefig(FIG / "eda_zoom_noise.png"); plt.close(fig)
 
-    # label / candidate diagnostics
-    fig, ax = plt.subplots(1, 3, figsize=(15, 4))
-    ax[0].hist(np.clip(obs.align_dist, 0, 100), bins=50, color="#3366cc"); ax[0].axvline(50, color="r", ls="--")
-    ax[0].set_title("Fix-to-reference-arc distance (train)"); ax[0].set_xlabel("m (clipped at 100)")
-    ax[1].hist(obs.n_cand, bins=np.arange(0, 12) - 0.5, color="#dc3912"); ax[1].set_title("Candidates per fix (train)")
-    pos_rank = cands[cands.y == 1].dist_rank.value_counts().sort_index()
-    ax[2].bar(pos_rank.index, pos_rank.values / pos_rank.sum() * 100, color="#109618")
-    ax[2].set_title("Distance rank of the true arc (train)"); ax[2].set_xlabel("rank (0 = nearest)"); ax[2].set_ylabel("%")
-    fig.tight_layout(); fig.savefig(FIG / "eda_candidates.png"); plt.close(fig)
+    # label / candidate diagnostics (requires processed modelling tables)
+    if have_processed:
+        fig, ax = plt.subplots(1, 3, figsize=(15, 4))
+        ax[0].hist(np.clip(obs.align_dist, 0, 100), bins=50, color="#3366cc"); ax[0].axvline(50, color="r", ls="--")
+        ax[0].set_title("Fix-to-reference-arc distance (train)"); ax[0].set_xlabel("m (clipped at 100)")
+        ax[1].hist(obs.n_cand, bins=np.arange(0, 12) - 0.5, color="#dc3912"); ax[1].set_title("Candidates per fix (train)")
+        pos_rank = cands[cands.y == 1].dist_rank.value_counts().sort_index()
+        ax[2].bar(pos_rank.index, pos_rank.values / pos_rank.sum() * 100, color="#109618")
+        ax[2].set_title("Distance rank of the true arc (train)"); ax[2].set_xlabel("rank (0 = nearest)"); ax[2].set_ylabel("%")
+        fig.tight_layout(); fig.savefig(FIG / "eda_candidates.png"); plt.close(fig)
 
-    # feature distributions true vs other candidates (reliable labels only)
-    rel = cands.merge(obs[["trip_id", "obs", "align_dist"]], on=["trip_id", "obs"])
-    rel = rel[rel.align_dist <= 50].sample(200000, random_state=config.SEED)
-    feats = ["dist", "dist_minus_min", "abs_heading_diff", "d_next5", "speed", "dist_to_end"]
-    fig, ax = plt.subplots(2, 3, figsize=(15, 8))
-    for a, f in zip(ax.ravel(), feats):
-        hi = np.percentile(rel[f], 99)
-        for y, col, lab in ((0, "#999999", "other candidates"), (1, "#109618", "reference arc")):
-            a.hist(np.clip(rel.loc[rel.y == y, f], None, hi), bins=50, alpha=0.6, density=True, color=col, label=lab)
-        a.set_title(f); a.legend()
-    fig.suptitle("Feature distributions: reference arc vs other candidates (train, reliable labels)")
-    fig.tight_layout(); fig.savefig(FIG / "eda_feature_distributions.png"); plt.close(fig)
+        # feature distributions true vs other candidates (reliable labels only)
+        rel = cands.merge(obs[["trip_id", "obs", "align_dist"]], on=["trip_id", "obs"])
+        rel = rel[rel.align_dist <= 50].sample(min(200000, len(rel)), random_state=config.SEED)
+        feats = ["dist", "dist_minus_min", "abs_heading_diff", "d_next5", "speed", "dist_to_end"]
+        fig, ax = plt.subplots(2, 3, figsize=(15, 8))
+        for a, f in zip(ax.ravel(), feats):
+            hi = np.percentile(rel[f], 99)
+            for y, col, lab in ((0, "#999999", "other candidates"), (1, "#109618", "reference arc")):
+                a.hist(np.clip(rel.loc[rel.y == y, f], None, hi), bins=50, alpha=0.6, density=True, color=col, label=lab)
+            a.set_title(f); a.legend()
+        fig.suptitle("Feature distributions: reference arc vs other candidates (train, reliable labels)")
+        fig.tight_layout(); fig.savefig(FIG / "eda_feature_distributions.png"); plt.close(fig)
 
-    corr = rel[config.FEATURES + ["y"]].corr()
-    fig, ax = plt.subplots(figsize=(11, 9))
-    im = ax.imshow(corr, cmap="RdBu_r", vmin=-1, vmax=1)
-    ax.set_xticks(range(len(corr))); ax.set_xticklabels(corr.columns, rotation=90)
-    ax.set_yticks(range(len(corr))); ax.set_yticklabels(corr.columns)
-    fig.colorbar(im); ax.set_title("Feature correlation (train sample)")
-    fig.tight_layout(); fig.savefig(FIG / "eda_feature_corr.png"); plt.close(fig)
+        corr = rel[config.FEATURES + ["y"]].corr()
+        fig, ax = plt.subplots(figsize=(11, 9))
+        im = ax.imshow(corr, cmap="RdBu_r", vmin=-1, vmax=1)
+        ax.set_xticks(range(len(corr))); ax.set_xticklabels(corr.columns, rotation=90)
+        ax.set_yticks(range(len(corr))); ax.set_yticklabels(corr.columns)
+        fig.colorbar(im); ax.set_title("Feature correlation (train sample)")
+        fig.tight_layout(); fig.savefig(FIG / "eda_feature_corr.png"); plt.close(fig)
+
 
     # folium map for the EDA trip
     m = viz.base_map(trk)
@@ -204,12 +218,15 @@ def plots(inv):
         "weak_components_median": float(inv.weak_components.median()),
         "largest_scc_frac_median": float(inv.largest_scc_frac.median()),
         "route_connected_frac_mean": float(inv.route_connected_frac.mean()),
-        "train_align_gt50_frac": float((obs.align_dist > 50).mean()),
-        "train_candidate_miss_rate_all": float(1 - obs.label_in_cands.mean()),
-        "train_candidate_miss_rate_reliable": float(1 - obs[obs.align_dist <= 50].label_in_cands.mean()),
-        "true_arc_is_nearest_frac": float((cands[cands.y == 1].dist_rank == 0).mean()),
-        "two_way_arc_frac": float(cands.is_two_way.mean()),
     }
+    if have_processed:
+        summary.update({
+            "train_align_gt50_frac": float((obs.align_dist > 50).mean()),
+            "train_candidate_miss_rate_all": float(1 - obs.label_in_cands.mean()),
+            "train_candidate_miss_rate_reliable": float(1 - obs[obs.align_dist <= 50].label_in_cands.mean()),
+            "true_arc_is_nearest_frac": float((cands[cands.y == 1].dist_rank == 0).mean()),
+            "two_way_arc_frac": float(cands.is_two_way.mean()),
+        })
     (config.RESULTS_DIR / "eda_summary.json").write_text(json.dumps(summary, indent=2, default=float))
     print(json.dumps(summary, indent=2, default=float))
 

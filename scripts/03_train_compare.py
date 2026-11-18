@@ -8,7 +8,9 @@ Outputs: results/model_comparison.csv, results/cv_fold_scores.csv, results/per_t
          results/training_histories.json, results/selected_model.json, data/processed/oof_<model>.npy,
          figures/cmp_*.png, models/<model>.joblib (small models)
 """
+import inspect
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -27,10 +29,19 @@ from sklearn.model_selection import GroupKFold
 from src import config
 from src.data import eval_rows_mask, load_partition, training_mask, xy
 from src.metrics import candidate_metrics, decision_metrics, observation_metrics, top1_per_obs
-import os
 from src.models import EpochMLP, make_lgbm, model_zoo
 
-QUICK = bool(os.environ.get("PATHSNAP_QUICK"))
+def _env_flag(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+QUICK = _env_flag("PATHSNAP_QUICK")
+RESULTS_DIR = config.RESULTS_DIR / "smoke" if QUICK else config.RESULTS_DIR
+MODELS_DIR = config.MODELS_DIR / "smoke" if QUICK else config.MODELS_DIR
+FIGURES_DIR = config.FIGURES_DIR / "smoke" if QUICK else config.FIGURES_DIR
+ARRAYS_DIR = RESULTS_DIR / "arrays" if QUICK else config.PROCESSED_DIR
+for _d in (RESULTS_DIR, MODELS_DIR, FIGURES_DIR, ARRAYS_DIR):
+    _d.mkdir(parents=True, exist_ok=True)
 
 N_FOLDS = 5
 SMALL_MODELS = {"LogisticRegression", "GaussianNB", "LightGBM", "MLP"}
@@ -40,7 +51,14 @@ def fit(model, X, y, Xv=None, yv=None):
     if isinstance(model, EpochMLP):
         return model.fit(X, y, Xv, yv)
     if model.__class__.__name__ == "LGBMClassifier" and Xv is not None:
-        return model.fit(X, y, eval_set=[(X, y), (Xv, yv)], eval_names=["train", "valid"], eval_metric="binary_logloss")
+        kwargs = {"eval_names": ["train", "valid"], "eval_metric": "binary_logloss"}
+        # LightGBM 4.7 deprecated eval_set in favour of eval_X/eval_y. Keep compatibility
+        # with earlier 4.x releases so the repository remains reproducible across machines.
+        if "eval_X" in inspect.signature(model.fit).parameters:
+            kwargs.update(eval_X=(X, Xv), eval_y=(y, yv))
+        else:
+            kwargs["eval_set"] = [(X, y), (Xv, yv)]
+        return model.fit(X, y, **kwargs)
     return model.fit(X, y)
 
 
@@ -61,8 +79,10 @@ def main():
     fit_mask = training_mask(tr_c, tr_o)
     groups = tr_c["trip_id"].to_numpy()
     folds = list(GroupKFold(n_splits=N_FOLDS).split(X, y, groups))
-    json.dump({"folds": [sorted(np.unique(groups[v]).tolist()) for _, v in folds]},
-              open(config.RESULTS_DIR / "cv_folds.json", "w"), indent=1)
+    with open(RESULTS_DIR / "cv_folds.json", "w") as f:
+        json.dump({"folds": [sorted(np.unique(groups[v]).tolist()) for _, v in folds]}, f, indent=1)
+    if QUICK:
+        print(f"Smoke mode enabled; outputs will be written under {RESULTS_DIR}", flush=True)
 
     zoo = model_zoo()
     if QUICK:  # smoke test: 3 cheap models
@@ -104,7 +124,7 @@ def main():
                               "train_log_loss": s_tr["log_loss"], "fit_seconds": fit_times[-1]})
             print(f"  fold {k}: macroF1={s['macro_f1']:.4f} top1={s['top1_acc']:.4f} logloss={s['log_loss']:.4f} "
                   f"train_macroF1={s_tr['macro_f1']:.4f} ({fit_times[-1]:.1f}s)", flush=True)
-        np.save(config.PROCESSED_DIR / f"oof_{name}.npy", oof)
+        np.save(ARRAYS_DIR / f"oof_{name}.npy", oof)
 
         # refit on all training trips -> student test
         m = factory()
@@ -119,9 +139,9 @@ def main():
         per_trip_all.append(per_trip)
         ev = eval_rows_mask(st_c, st_o)
         cms[name] = confusion_matrix(ys[ev], (ps[ev] >= 0.5).astype(int), labels=[0, 1]).tolist()
-        np.save(config.PROCESSED_DIR / f"st_proba_{name}.npy", ps)
+        np.save(ARRAYS_DIR / f"st_proba_{name}.npy", ps)
         if name in SMALL_MODELS:
-            joblib.dump(m, config.MODELS_DIR / f"{name}.joblib")
+            joblib.dump(m, MODELS_DIR / f"{name}.joblib")
 
         fs = pd.DataFrame(fold_scores)
         rows.append({
@@ -132,7 +152,9 @@ def main():
             "cv_precision": fs.macro_precision.mean(), "cv_recall": fs.macro_recall.mean(),
             "st_macro_f1": st["macro_f1"], "st_precision": st["macro_precision"], "st_recall": st["macro_recall"],
             "st_top1": st["top1_acc"], "st_log_loss": st["log_loss"], "st_continuity": st["route_continuity"],
-            "st_route_f1": st["route_f1"], "st_decision_macro_f1": st["decision_macro_f1"],
+            "st_observed_arc_set_f1": st["observed_arc_set_f1"],
+            "st_route_f1": st["route_f1"],  # legacy alias; see src.metrics
+            "st_decision_macro_f1": st["decision_macro_f1"],
             "st_candidate_miss_rate": st["candidate_miss_rate"],
             "train_time_s": train_time, "inference_ms_per_fix": inf_time / len(st_o) * 1000,
             "mean_fold_fit_s": float(np.mean(fit_times)),
@@ -140,20 +162,20 @@ def main():
         print(pd.Series(rows[-1]).to_string(), flush=True)
 
     res = pd.DataFrame(rows)
-    res.to_csv(config.RESULTS_DIR / "model_comparison.csv", index=False)
-    pd.DataFrame(fold_rows).to_csv(config.RESULTS_DIR / "cv_fold_scores.csv", index=False)
-    pd.concat(per_trip_all).to_csv(config.RESULTS_DIR / "per_trip_student_test.csv", index=False)
-    json.dump(hist, open(config.RESULTS_DIR / "training_histories.json", "w"))
-    json.dump(cms, open(config.RESULTS_DIR / "confusion_matrices.json", "w"))
+    res.to_csv(RESULTS_DIR / "model_comparison.csv", index=False)
+    pd.DataFrame(fold_rows).to_csv(RESULTS_DIR / "cv_fold_scores.csv", index=False)
+    pd.concat(per_trip_all).to_csv(RESULTS_DIR / "per_trip_student_test.csv", index=False)
+    json.dump(hist, open(RESULTS_DIR / "training_histories.json", "w"))
+    json.dump(cms, open(RESULTS_DIR / "confusion_matrices.json", "w"))
     best = res.sort_values(["cv_top1", "cv_macro_f1"], ascending=False).iloc[0]["model"]
     json.dump({"selected_model": best, "criterion": "highest mean CV observation-level Top-1 accuracy "
-               "(tie-break: CV macro F1)"}, open(config.RESULTS_DIR / "selected_model.json", "w"), indent=1)
+               "(tie-break: CV macro F1)"}, open(RESULTS_DIR / "selected_model.json", "w"), indent=1)
     print("\nSelected:", best)
     plot(res, pd.DataFrame(fold_rows), hist, cms)
 
 
 def plot(res, folds, hist, cms):
-    F = config.FIGURES_DIR
+    F = FIGURES_DIR
     order = res.sort_values("cv_top1", ascending=False)["model"].tolist()
     r = res.set_index("model").loc[order]
 
@@ -220,7 +242,7 @@ def plot(res, folds, hist, cms):
 
 if __name__ == "__main__":
     if "--plots-only" in sys.argv:  # redraw figures from the saved result files
-        R = config.RESULTS_DIR
+        R = RESULTS_DIR
         plot(pd.read_csv(R / "model_comparison.csv"), pd.read_csv(R / "cv_fold_scores.csv"),
              json.load(open(R / "training_histories.json")), json.load(open(R / "confusion_matrices.json")))
     else:

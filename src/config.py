@@ -1,4 +1,5 @@
 """Central configuration: paths and pipeline constants shared by every stage."""
+import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,6 +16,26 @@ for _d in (PROCESSED_DIR, MODELS_DIR, RESULTS_DIR, FIGURES_DIR, MAPS_DIR):
     _d.mkdir(parents=True, exist_ok=True)
 
 SEED = 42
+
+
+def _bounded_env_int(name: str, default: int, upper: int) -> int:
+    """Read a positive integer environment variable and clamp it to a safe upper bound."""
+    raw = os.environ.get(name)
+    if raw is None:
+        return max(1, min(default, upper))
+    try:
+        value = int(raw)
+    except ValueError as exc:
+        raise ValueError(f"{name} must be an integer, got {raw!r}") from exc
+    if value < 1:
+        raise ValueError(f"{name} must be >= 1, got {value}")
+    return min(value, upper)
+
+
+CPU_COUNT = os.cpu_count() or 1
+N_JOBS = _bounded_env_int("PATHSNAP_N_JOBS", CPU_COUNT, CPU_COUNT)
+# Candidate generation is memory-heavy, so use a smaller default than model fitting.
+BUILD_JOBS = _bounded_env_int("PATHSNAP_BUILD_JOBS", min(4, CPU_COUNT), CPU_COUNT)
 
 # --- road network -----------------------------------------------------------
 NETWORK_MARGIN_M = 1000.0      # keep arcs within this distance of the track bounding box

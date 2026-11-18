@@ -149,7 +149,15 @@ Copy the **unchanged college-provided files** into `data/raw/train/` and `data/r
 
 Do not preprocess or rewrite the source files manually.
 
-### Step 2 — Build processed modelling tables
+### Step 2 — Run raw exploratory analysis
+
+```powershell
+python scripts/01_eda.py
+```
+
+The EDA script can run before processed modelling tables exist. In that case it produces the raw-data inventory, gap/network plots, maps, and raw summary, and skips candidate/feature diagnostics.
+
+### Step 3 — Build processed modelling tables
 
 ```powershell
 python scripts/02_build_dataset.py
@@ -166,13 +174,13 @@ student_test_obs.pkl
 
 It also writes the cleaning log to `results/cleaning_log.csv`.
 
-### Step 3 — Run exploratory analysis
+### Step 4 — Re-run EDA for candidate diagnostics
 
 ```powershell
 python scripts/01_eda.py
 ```
 
-**Current-revision note:** despite its `01_` filename, parts of this EDA script read the processed candidate tables produced by `02_build_dataset.py`. Therefore, in the current repository revision, run `02_build_dataset.py` before `01_eda.py`.
+After the processed tables exist, the same EDA script also generates candidate-coverage, feature-distribution, and feature-correlation diagnostics.
 
 EDA outputs are written to:
 
@@ -183,7 +191,7 @@ figures/eda_*.png
 maps/eda_*.html
 ```
 
-### Step 4 — Train and compare all models
+### Step 5 — Train and compare all models
 
 ```powershell
 python scripts/03_train_compare.py
@@ -203,7 +211,9 @@ figures/cmp_*.png
 models/*.joblib
 ```
 
-> **Important:** the current `PATHSNAP_QUICK=1` mode writes to the same output locations as the full experiment. Until the cleanup patch is applied, do not run quick mode if you want to preserve the committed official models/results.
+For a non-destructive smoke run, set `PATHSNAP_QUICK=1`. Smoke-mode artifacts are isolated under `results/smoke/`, `models/smoke/`, and `figures/smoke/`, so official full-run artifacts are not overwritten.
+
+Optional worker controls are `PATHSNAP_N_JOBS` for model fitting and `PATHSNAP_BUILD_JOBS` for candidate-table construction. Both default to CPU-aware values.
 
 ### Optional — Live demonstration
 
