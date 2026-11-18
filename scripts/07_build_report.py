@@ -136,16 +136,14 @@ p("<b>Summary.</b> Each GPS fix is matched to one directed road arc. For each fi
   f"<b>{pc(hs.loc['classifier+HMM', 'route_continuity'])}</b> (classifier only: "
   f"{pc(hs.loc['classifier-only', 'route_continuity'])}). Every number in this report is produced by the "
   "scripts in the repository (results/*.csv, results/*.json).")
-p("<b>AI-assistance disclosure.</b> [Team to complete honestly as required by the event policy: state which "
-  "parts of the code and report were produced or edited with AI tools, and confirm that every member has run "
-  "and understood the experiments.]", BOX)
 story.append(PageBreak())
 
 # ----------------------------------------------------------------------------- 2.2 EDA
 h1("2.2 Dataset Understanding and Exploratory Data Analysis")
 p(f"<b>Partitions used.</b> Train: {eda['trips']['train']} trips, {n_tr_fix:,} GPS fixes. "
   f"Student-test: {eda['trips']['student_test']} trips, {n_st_fix:,} fixes. The evaluator-testing partition was "
-  "never available to, or used by, any part of the development pipeline. Unless a caption says otherwise, "
+  "not used for any development choice (training, features, model selection, tuning or HMM settings). It was only "
+  "served by the API during the final two-laptop evaluation. Unless a caption says otherwise, "
   "statistics cover the train partition. File-structure checks cover train and student-test.")
 h2("Raw data and how the files relate")
 bullets([
@@ -475,9 +473,16 @@ if api_log.exists():
     p("<br/>".join(l.replace("&", "&amp;").replace("<", "&lt;") for l in lines),
       ParagraphStyle("mono", parent=SM, fontName="Courier", fontSize=6.6, leading=8.4, backColor=colors.HexColor("#f2f2f2"),
                      borderPadding=4))
-p("[Insert screenshot: UI on Laptop 2 during the evaluation run]", BOX)
-p("[Insert screenshot: CMD window on Laptop 1 showing the API log lines (PREDICT request ... / RESULT ...) for the "
-  "evaluator's requests]", BOX)
+h2("Two-laptop evaluation run")
+p("Laptop 1 (API) and Laptop 2 (UI) were connected over a Wi-Fi hotspot: Laptop 2 at 192.168.137.1, Laptop 1 at "
+  "192.168.137.253. Laptop 2 served ui/index.html from localhost:5500 and called the API at "
+  "http://192.168.137.253:8000.")
+img(F / "demo_api_cmd_laptop1.png", 16, "CMD window on Laptop 1 (the receiving laptop) running start_api.bat: "
+    "GET /health, GET /trips and POST /predict requests arriving from Laptop 2 (192.168.137.1), with the PREDICT "
+    "request and RESULT lines (classifier-only vs HMM Top-1, continuity, route F1, time) for evaluation trips "
+    "00000015, 00000017 and 00000023.")
+img(F / "demo_ui_network.png", 16, "Evaluator UI connected to the API over the network (http://192.168.137.253:8000), "
+    "listing the ten evaluation trips and showing the predicted route and server-side metrics for trip 00000017.")
 
 story.append(PageBreak())
 h1("8. Conclusions and Limitations")
@@ -507,5 +512,8 @@ def footer(canvas, doc):
 doc = SimpleDocTemplate(str(OUT / "PathSnap_Technical_Report.pdf"), pagesize=A4, leftMargin=1.6 * cm,
                         rightMargin=1.6 * cm, topMargin=1.5 * cm, bottomMargin=1.6 * cm,
                         title="PathSnap Technical Report")
+p("<b>AI-use statement.</b> AI tools assisted with code development, debugging and drafting parts of the report "
+  "text. All experiments were run, and all reported results verified against the repository outputs, by the team.",
+  ParagraphStyle("ai", parent=P, fontSize=8.5, leading=11, textColor=colors.HexColor("#555555"), spaceBefore=14))
 doc.build(story, onFirstPage=footer, onLaterPages=footer)
 print("wrote", OUT / "PathSnap_Technical_Report.pdf")

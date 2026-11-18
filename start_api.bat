@@ -44,5 +44,5 @@ echo If Windows asks to allow Python through the firewall, tick BOTH Private and
 echo Keep this window open: every request from the UI is logged here (show these logs to the evaluator).
 echo ============================================================
 echo.
-python -m uvicorn api.main:app --host 0.0.0.0 --port 8000
+python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --no-use-colors
 pause

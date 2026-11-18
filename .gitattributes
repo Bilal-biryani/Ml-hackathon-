@@ -5,3 +5,8 @@
 *.npy binary
 *.png binary
 *.zip binary
+
+# language statistics: count our source code, not generated maps or bundled libraries
+maps/** linguist-generated
+ui/vendor/** linguist-vendored
+report/** linguist-generated
