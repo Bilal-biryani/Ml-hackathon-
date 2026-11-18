@@ -1,0 +1,31 @@
+{
+ "n_eval_fixes": 19133,
+ "errors": {
+  "classifier_only": {
+   "missing_candidate": 25,
+   "reverse_twin": 875,
+   "adjacent_arc": 748,
+   "other": 371
+  },
+  "hmm": {
+   "missing_candidate": 25,
+   "reverse_twin": 500,
+   "adjacent_arc": 475,
+   "other": 95
+  }
+ },
+ "error_share": {
+  "classifier_only": {
+   "missing_candidate": 0.012382367508667657,
+   "reverse_twin": 0.433382862803368,
+   "adjacent_arc": 0.3704804358593363,
+   "other": 0.18375433382862805
+  },
+  "hmm": {
+   "missing_candidate": 0.0228310502283105,
+   "reverse_twin": 0.45662100456621,
+   "adjacent_arc": 0.4337899543378995,
+   "other": 0.0867579908675799
+  }
+ }
+}

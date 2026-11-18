@@ -1,0 +1,15 @@
+{
+ "params": {
+  "beta": 1.0,
+  "emission_weight": 2.0,
+  "unreachable_logp": -50.0,
+  "gap_break_s": 60.0,
+  "backtrack_tol_m": 15.0
+ },
+ "selected_on": "train trips, out-of-fold probabilities of the final model",
+ "objective": "observation-level Top-1 accuracy (reliable fixes)",
+ "train_oof_top1": 0.9303852842375866,
+ "train_oof_classifier_only_top1": 0.8827027143798404,
+ "unreachable_pair_fraction_train": 0.2379526092859667,
+ "gap_breaks_train": 69
+}
