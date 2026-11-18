@@ -1,8 +1,9 @@
 """Geometry helpers.
 
-The dataset is a single city (~8.6E, 49.9N). A local equirectangular projection centred on each
-trip is accurate to well under 0.1 % over a few tens of kilometres, so distances in metres can be
-computed with plain Euclidean geometry after projecting.
+The trips are spread over five continents, but each single trip spans at most ~75 km. A local
+equirectangular projection centred on each trip is therefore accurate to well under 1 % (far less
+for typical trips of a few km), so distances in metres can be computed with plain Euclidean
+geometry after projecting.
 """
 import numpy as np
 
