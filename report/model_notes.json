@@ -1,0 +1,51 @@
+{
+ "LogisticRegression": {
+  "why": "A linear baseline on standardised features. If 'reference arc' were mostly a linear function of distance, heading agreement and context distances, this model would already be enough. It also gives well-formed probabilities for the HMM emissions.",
+  "strengths": "Fastest model to predict (about 0.001 ms per fix) and very stable across folds. Its largest coefficients make physical sense: heading difference (-3.78), distance gap to the best candidate (-3.26) and distance rank (-2.09) all lower the score. Limitation: correlated partner features take counter-intuitive signs (cos_heading -1.67, raw dist +0.38) because of multicollinearity, and the model cannot represent interactions such as 'heading matters only when moving and the twin arc is equally close'. It therefore plateaus at about 0.90 macro F1.",
+  "hyper": "C = 1.0 (inverse L2 strength), lbfgs solver, max_iter = 1000; features standardised.",
+  "loss": "Binary cross-entropy (log loss) with an L2 penalty.",
+  "fit": "Train and held-out scores are almost identical (macro F1 0.903 vs 0.900, log loss 0.141 vs 0.144), so there is no overfitting. Both are about 0.03 below the tree models' held-out macro F1, which indicates <b>underfitting</b> (high bias): a linear boundary is too simple for these feature interactions."
+ },
+ "GaussianNB": {
+  "why": "A probabilistic baseline that models each feature as class-conditional Gaussian. It shows how far independent per-feature evidence goes and is almost free to train.",
+  "strengths": "Very fast and needs no tuning. Limitation: its independence assumption is badly violated here (dist, dist_minus_min, dist_ratio and the d_prev/d_next features are strongly correlated, see the correlation figure), and several features are heavy-tailed or discrete, so its probabilities are over-confident.",
+  "hyper": "var_smoothing = 1e-9 (default); no scaling needed.",
+  "loss": "Maximum likelihood of class priors and per-class Gaussian means/variances (generative); no iterative loss.",
+  "fit": "Train and held-out scores match (0.842 vs 0.839) but are the lowest of all models, and log loss is about 6x worse (0.56). This is clear <b>underfitting</b> caused by the wrong independence and Gaussian assumptions. The confusion matrix shows high recall (0.90) but many false positives (11,184), i.e. over-confident probabilities."
+ },
+ "KNN": {
+  "why": "An instance-based model: a candidate that looks like previously seen true candidates (similar distance, heading agreement and context) is probably the reference arc. It makes no assumption about the shape of the decision boundary.",
+  "strengths": "Flexible non-linear boundary with no training phase. Limitations: it depends on feature scaling and the distance metric, it scales poorly (it was fitted on a 100k-row random subsample because querying 1.2M rows is too slow), it is the slowest model at inference, and distance weighting memorises its training points.",
+  "hyper": "n_neighbors = 50, distance weighting, Euclidean metric on standardised features, 100,000-row training subsample (seed 42).",
+  "loss": "None (lazy learner); predictions are distance-weighted neighbour votes.",
+  "fit": "Distance-weighted KNN reproduces its own training points exactly (train macro F1 1.000, log loss 0.000), so the training score shows <b>memorisation/overfitting</b> by construction. Its held-out macro F1 (0.908) is only at the level of Logistic Regression, and it is the slowest model at inference (0.51 ms per fix, about 25x LightGBM)."
+ },
+ "RandomForest": {
+  "why": "Bagged decision trees capture the non-linear interactions the EDA showed (heading matters only when moving, relative distance matters more than absolute), work with unscaled mixed-type features, and averaging trees reduces variance across trips.",
+  "strengths": "Strong accuracy, robust to feature scaling and outliers, and probability averaging gives reasonable emissions. Limitations: large model files (deep trees), slower training and prediction than boosting, and probabilities are not perfectly calibrated.",
+  "hyper": "n_estimators = 200, max_features = sqrt, min_samples_leaf = 5, unlimited depth, bootstrap, seed 42.",
+  "loss": "Each tree greedily minimises Gini impurity; the forest averages leaf class frequencies.",
+  "fit": "It has the largest train-to-held-out gap of the strong models (0.971 vs 0.929), which shows <b>mild overfitting</b> of deep trees, limited by min_samples_leaf = 5. Even so, its held-out log loss (0.091) is the best of all models and its Top-1 (0.880) is level with LightGBM, so the variance does not hurt generalisation much. The cost is the slowest training (122 s) and a large model file."
+ },
+ "ExtraTrees": {
+  "why": "Like Random Forest but with randomised split thresholds, which decorrelates the trees further. A good check on whether more randomisation helps generalisation to unseen trips.",
+  "strengths": "Faster to fit than Random Forest and lower variance. Limitation: the random thresholds blur sharp boundaries (e.g. heading near 90 degrees, a few-metre distance margin), which can cost accuracy when the signal is precise.",
+  "hyper": "n_estimators = 200, max_features = sqrt, min_samples_leaf = 5, random split thresholds, no bootstrap, seed 42.",
+  "loss": "Gini impurity at randomly drawn split thresholds; leaf class frequencies are averaged.",
+  "fit": "Smaller gap than Random Forest (0.950 vs 0.925) because the random thresholds regularise the trees, but held-out macro F1 and Top-1 (0.874) are slightly lower too. The extra randomisation trades a little bias for variance, and on this data that does not pay off. This is <b>mild overfitting</b> with slightly higher bias than RF."
+ },
+ "LightGBM": {
+  "why": "Gradient-boosted trees fit the residual errors of earlier trees, so they learn sharp feature interactions (heading x moving, distance gap x density) efficiently on 1.2M rows. They optimise log loss directly, which is exactly the quality the HMM emissions need.",
+  "strengths": "The best accuracy-to-cost ratio, fast histogram-based training, small model file, very fast inference, and native handling of unscaled features. Limitations: more hyper-parameters, and it can overfit with too many leaves or rounds, which is why it was tuned with trip-grouped CV.",
+  "hyper": "n_estimators = 400, learning_rate = 0.05, num_leaves = 63, min_child_samples = 20, no row/column subsampling, no regularisation, seed 42.",
+  "loss": "Binary log loss minimised by second-order gradient boosting.",
+  "fit": "The gap is 0.958 vs 0.928 macro F1. The fold-0 history shows validation log loss levelling off after about 150 iterations and drifting upward with spikes after about 350, while training loss keeps falling. This is <b>mild overfitting</b> from 400 rounds with 63 leaves and no regularisation, and it is exactly what the Bayesian optimisation addresses (learning rate, leaves, row/column subsampling, L1/L2)."
+ },
+ "MLP": {
+  "why": "A shallow neural network learns smooth non-linear combinations of all features and produces probabilities, which tests whether a learned representation beats hand-crafted tree splits.",
+  "strengths": "Smooth decision surface and epoch-wise training curves for diagnosis. Limitations: it needs scaling, is sensitive to learning rate and epochs, was trained on a 400k-row subsample for time reasons, and gives no gain over boosting on tabular features of this size.",
+  "hyper": "hidden layers (64, 32), ReLU, Adam with learning rate 1e-3, L2 alpha = 1e-4, batch size 1024, 20 epochs, 400k-row subsample, standardised features.",
+  "loss": "Binary cross-entropy (log loss) with L2 weight decay, minimised with Adam.",
+  "fit": "Small gap (0.933 vs 0.921). The epoch history shows validation loss reaching its minimum around epochs 11-16 and rising again to 0.102 at epoch 20 while training loss keeps decreasing, so it is <b>starting to overfit</b>; early stopping around epoch 12 would help. Its held-out Top-1 (0.875) is below the tree ensembles, so the learned representation gives no gain over boosting on these tabular features."
+ }
+}

@@ -1,0 +1,42 @@
+{
+ "model": "LightGBM",
+ "params": {
+  "n_estimators": 500,
+  "learning_rate": 0.044449550394621055,
+  "num_leaves": 159,
+  "min_child_samples": 84,
+  "subsample": 0.8900239402344151,
+  "colsample_bytree": 0.40249859967442,
+  "reg_lambda": 0.023327489245158622,
+  "reg_alpha": 0.006431691433559058
+ },
+ "features": [
+  "dist",
+  "dist_rank",
+  "dist_minus_min",
+  "dist_ratio",
+  "n_cand",
+  "cand_density_10m",
+  "cos_heading",
+  "abs_heading_diff",
+  "heading_valid",
+  "speed",
+  "arc_len",
+  "t_frac",
+  "dist_to_end",
+  "d_prev2",
+  "d_next2",
+  "d_prev5",
+  "d_next5",
+  "out_degree",
+  "in_degree",
+  "is_two_way"
+ ],
+ "best_cv_top1": 0.8829004915506833,
+ "n_trials": 40,
+ "n_pruned": 0,
+ "search_seconds": 1974.1678466796875,
+ "sampler": "TPE (seed 42, 10 random start-up trials)",
+ "pruner": "MedianPruner (8 start-up trials, warm-up 1 fold)",
+ "objective": "maximise mean 5-fold GroupKFold observation-level Top-1 accuracy (train trips only)"
+}
