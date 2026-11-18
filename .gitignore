@@ -1,6 +1,9 @@
-# raw and derived data (too large for git; see README)
+# raw and derived data (too large for git; see README "Data")
 data/raw/
+data/eval/*
+!data/eval/.gitkeep
 data/processed/
 __pycache__/
 *.pyc
 .venv/
+.ipynb_checkpoints/

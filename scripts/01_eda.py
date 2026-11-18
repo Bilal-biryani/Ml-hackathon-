@@ -107,13 +107,32 @@ def plots(inv):
         ax[1].text(0.5, 0.5, "Candidate diagnostics require\n02_build_dataset.py", ha="center", va="center")
     fig.tight_layout(); fig.savefig(FIG / "eda_missing_gaps.png"); plt.close(fig)
 
-    # GPS trajectory plots (all train trips) in lon/lat
-    fig, ax = plt.subplots(figsize=(8, 8))
-    for t in tr.trip_id:
+    # where the trips are: one point per trip (both partitions) -- the trips are spread worldwide
+    locs = []
+    for part, d in (("train", config.TRAIN_DIR), ("student_test", config.STUDENT_TEST_DIR)):
+        for t in inv[inv.partition == part].trip_id:
+            a = read_track_raw(d / t)
+            locs.append((part, t, a[:, 0].mean(), a[:, 1].mean(), len(a)))
+    locs = pd.DataFrame(locs, columns=["partition", "trip_id", "lon", "lat", "n_fixes"])
+    locs.to_csv(config.RESULTS_DIR / "eda_trip_locations.csv", index=False)
+    fig, ax = plt.subplots(figsize=(11, 5.5))
+    for part, col in (("train", "#3366cc"), ("student_test", "#dc3912")):
+        s = locs[locs.partition == part]
+        ax.scatter(s.lon, s.lat, s=18, color=col, label=f"{part} ({len(s)} trips)", alpha=0.8)
+    ax.set_xlim(-180, 180); ax.set_ylim(-60, 75); ax.set_xlabel("longitude"); ax.set_ylabel("latitude")
+    ax.set_title("Trip locations (mean of each GPS track): the 90 trips are spread over 5 continents"); ax.legend()
+    fig.tight_layout(); fig.savefig(FIG / "eda_trip_locations.png"); plt.close(fig)
+
+    # GPS trajectory shapes: 16 train trips, each in its own local metric frame
+    sample = tr.sort_values("n_fixes").trip_id.to_numpy()[np.linspace(0, len(tr) - 1, 16).astype(int)]
+    fig, axs = plt.subplots(4, 4, figsize=(13, 13))
+    for ax, t in zip(axs.ravel(), sample):
         a = read_track_raw(config.TRAIN_DIR / t)
-        ax.plot(a[:, 0], a[:, 1], lw=0.6)
-    ax.set_xlabel("longitude"); ax.set_ylabel("latitude"); ax.set_title("All 80 training GPS trajectories")
-    ax.set_aspect(1 / np.cos(np.deg2rad(49.87)))
+        p = LocalProjection(a[:, 0].mean(), a[:, 1].mean()).forward(a[:, 0], a[:, 1]) / 1000
+        ax.plot(p[:, 0], p[:, 1], lw=0.8, color="#1f4fd1")
+        ax.scatter(p[0, 0], p[0, 1], color="green", s=15, zorder=3); ax.scatter(p[-1, 0], p[-1, 1], color="red", s=15, zorder=3)
+        ax.set_aspect("equal"); ax.set_title(f"{t}  ({len(a)} fixes)", fontsize=9); ax.tick_params(labelsize=7)
+    fig.suptitle("GPS trajectories of 16 train trips (km, local projection; green = start, red = end)")
     fig.tight_layout(); fig.savefig(FIG / "eda_all_trajectories.png"); plt.close(fig)
 
     # road network + GPS + reference route for one trip
@@ -204,7 +223,22 @@ def plots(inv):
                [("GPS observations", "#1f4fd1"), ("Reference route", "#109618"), ("Road network", "#7f7f7f")],
                title=f"Train trip {tid2}: partial reference route")
 
+    # folium overview of all trip locations
+    import folium
+    m = folium.Map(location=[30, 10], zoom_start=2, control_scale=True)
+    for part, col in (("train", "blue"), ("student_test", "red")):
+        fg = folium.FeatureGroup(name=f"{part} trips")
+        for r in locs[locs.partition == part].itertuples():
+            folium.CircleMarker([r.lat, r.lon], radius=5, color=col, fill=True, fill_opacity=0.8,
+                                tooltip=f"{part} trip {r.trip_id}: {r.n_fixes} fixes").add_to(fg)
+        fg.add_to(m)
+    viz.finish(m, config.MAPS_DIR / "eda_trip_locations.html", [("train trips", "blue"), ("student-test trips", "red")],
+               title="Trip locations (both partitions)")
+    region = np.select([locs.lon < -30, locs.lon > 60], ["Americas", "Asia/Oceania"], "Europe/Africa")
+
     summary = {
+        "trips_by_region": pd.Series(region).value_counts().to_dict(),
+        "max_trip_extent_km": float(max(inv.extent_x_km.max(), inv.extent_y_km.max())),
         "trips": inv.groupby("partition").size().to_dict(),
         "fixes": inv.groupby("partition").n_fixes.sum().to_dict(),
         "fixes_per_trip": inv.n_fixes.describe().round(1).to_dict(),

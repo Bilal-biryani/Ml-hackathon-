@@ -1,0 +1,62 @@
+INFO:     Started server process [20008]
+INFO:     Waiting for application startup.
+13:10:57 | INFO    | Loaded model LightGBM with 20 features and HMM {'beta': 1.0, 'emission_weight': 2.0, 'unreachable_logp': -50.0, 'gap_break_s': 60.0, 'backtrack_tol_m': 15.0} in 0.25s
+13:10:57 | INFO    | Serving trips from data\raw\student_test (10 trips)
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+13:11:00 | INFO    | GET /health from 127.0.0.1 -> 200 (3 ms)
+INFO:     127.0.0.1:48330 - "GET /health HTTP/1.1" 200 OK
+13:11:00 | INFO    | GET /health from 127.0.0.1 -> 200 (0 ms)
+INFO:     127.0.0.1:48332 - "GET /health HTTP/1.1" 200 OK
+13:11:03 | INFO    | GET /trips from 127.0.0.1 -> 200 (12 ms)
+INFO:     127.0.0.1:48334 - "GET /trips HTTP/1.1" 200 OK
+13:11:05 | INFO    | PREDICT request trip=00000000 from 127.0.0.1
+13:11:05 | INFO    | RESULT trip=00000000 fixes=2503 | Top-1 classifier-only=0.9565 HMM=0.9756 | continuity HMM=0.9960 | route F1 HMM=0.9748 | 0.49s
+13:11:05 | INFO    | POST /predict from 127.0.0.1 -> 200 (509 ms)
+INFO:     127.0.0.1:48336 - "POST /predict HTTP/1.1" 200 OK
+13:11:07 | INFO    | PREDICT request trip=00000007 from 127.0.0.1
+13:11:08 | INFO    | RESULT trip=00000007 fixes=1354 | Top-1 classifier-only=0.9638 HMM=0.9956 | continuity HMM=0.9993 | route F1 HMM=0.9959 | 0.22s
+13:11:08 | INFO    | POST /predict from 127.0.0.1 -> 200 (228 ms)
+INFO:     127.0.0.1:48340 - "POST /predict HTTP/1.1" 200 OK
+13:11:10 | INFO    | PREDICT request trip=00000009 from 127.0.0.1
+13:11:10 | INFO    | RESULT trip=00000009 fixes=1049 | Top-1 classifier-only=0.8799 HMM=0.9133 | continuity HMM=0.9475 | route F1 HMM=0.9541 | 0.38s
+13:11:10 | INFO    | POST /predict from 127.0.0.1 -> 200 (394 ms)
+INFO:     127.0.0.1:48345 - "POST /predict HTTP/1.1" 200 OK
+13:11:12 | INFO    | PREDICT request trip=00000040 from 127.0.0.1
+13:11:13 | INFO    | RESULT trip=00000040 fixes=2995 | Top-1 classifier-only=0.9336 HMM=0.9503 | continuity HMM=0.9963 | route F1 HMM=0.9933 | 0.55s
+13:11:13 | INFO    | POST /predict from 127.0.0.1 -> 200 (575 ms)
+INFO:     127.0.0.1:48347 - "POST /predict HTTP/1.1" 200 OK
+13:11:15 | INFO    | PREDICT request trip=00000052 from 127.0.0.1
+13:11:15 | INFO    | RESULT trip=00000052 fixes=262 | Top-1 classifier-only=0.9847 HMM=1.0000 | continuity HMM=0.9655 | route F1 HMM=1.0000 | 0.13s
+13:11:15 | INFO    | POST /predict from 127.0.0.1 -> 200 (139 ms)
+INFO:     127.0.0.1:48349 - "POST /predict HTTP/1.1" 200 OK
+13:11:17 | INFO    | PREDICT request trip=00000056 from 127.0.0.1
+13:11:19 | INFO    | RESULT trip=00000056 fixes=3958 | Top-1 classifier-only=0.9155 HMM=0.9636 | continuity HMM=0.9666 | route F1 HMM=0.9818 | 1.96s
+13:11:19 | INFO    | POST /predict from 127.0.0.1 -> 200 (2056 ms)
+INFO:     127.0.0.1:48351 - "POST /predict HTTP/1.1" 200 OK
+13:11:21 | INFO    | PREDICT request trip=00000065 from 127.0.0.1
+13:11:21 | INFO    | RESULT trip=00000065 fixes=768 | Top-1 classifier-only=0.8737 HMM=0.9154 | continuity HMM=0.9844 | route F1 HMM=0.9627 | 0.30s
+13:11:21 | INFO    | POST /predict from 127.0.0.1 -> 200 (306 ms)
+INFO:     127.0.0.1:48416 - "POST /predict HTTP/1.1" 200 OK
+13:11:23 | INFO    | PREDICT request trip=00000076 from 127.0.0.1
+13:11:24 | INFO    | RESULT trip=00000076 fixes=1486 | Top-1 classifier-only=0.9213 HMM=0.9751 | continuity HMM=0.9704 | route F1 HMM=0.9649 | 0.62s
+13:11:24 | INFO    | POST /predict from 127.0.0.1 -> 200 (639 ms)
+INFO:     127.0.0.1:48482 - "POST /predict HTTP/1.1" 200 OK
+13:11:26 | INFO    | PREDICT request trip=00000077 from 127.0.0.1
+13:11:27 | INFO    | RESULT trip=00000077 fixes=3911 | Top-1 classifier-only=0.7714 HMM=0.8734 | continuity HMM=0.9918 | route F1 HMM=0.9427 | 0.89s
+13:11:27 | INFO    | POST /predict from 127.0.0.1 -> 200 (914 ms)
+INFO:     127.0.0.1:48484 - "POST /predict HTTP/1.1" 200 OK
+13:11:29 | INFO    | PREDICT request trip=00000091 from 127.0.0.1
+13:11:29 | INFO    | RESULT trip=00000091 fixes=874 | Top-1 classifier-only=0.8947 HMM=0.9451 | continuity HMM=0.9668 | route F1 HMM=0.9459 | 0.28s
+13:11:29 | INFO    | POST /predict from 127.0.0.1 -> 200 (284 ms)
+INFO:     127.0.0.1:48486 - "POST /predict HTTP/1.1" 200 OK
+13:11:35 | INFO    | GET /health from 127.0.0.1 -> 200 (1 ms)
+INFO:     127.0.0.1:48506 - "GET /health HTTP/1.1" 200 OK
+13:11:35 | INFO    | GET /trips from 127.0.0.1 -> 200 (9 ms)
+INFO:     127.0.0.1:48506 - "GET /trips HTTP/1.1" 200 OK
+13:11:35 | INFO    | OPTIONS /predict from 127.0.0.1 -> 200 (1 ms)
+INFO:     127.0.0.1:48506 - "OPTIONS /predict HTTP/1.1" 200 OK
+13:11:35 | INFO    | PREDICT request trip=00000056 from 127.0.0.1
+13:11:36 | INFO    | RESULT trip=00000056 fixes=3958 | Top-1 classifier-only=0.9155 HMM=0.9636 | continuity HMM=0.9666 | route F1 HMM=0.9818 | 1.28s
+13:11:36 | INFO    | POST /predict from 127.0.0.1 -> 200 (1306 ms)
+INFO:     127.0.0.1:48506 - "POST /predict HTTP/1.1" 200 OK

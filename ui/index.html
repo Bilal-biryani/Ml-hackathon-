@@ -35,6 +35,8 @@
   table { width:100%; border-collapse:collapse; font-size:13px; }
   th, td { padding:6px 8px; border-bottom:1px solid var(--line); text-align:right; }
   th:first-child, td:first-child { text-align:left; }
+  .leaflet-control-layers label { display:block; margin:0; font-size:13px; color:#333; }
+  .leaflet-control-layers input { width:auto; padding:0; margin:0 4px 0 0; vertical-align:-1px; }
   .legend { background:#fff; padding:6px 9px; border-radius:6px; border:1px solid #bbb; font-size:12px; line-height:1.6; }
   .sw { display:inline-block; width:16px; height:4px; margin-right:6px; vertical-align:middle; }
   .spin { display:inline-block; width:12px; height:12px; border:2px solid #ccc; border-top-color:var(--accent); border-radius:50%; animation:s 0.8s linear infinite; vertical-align:-2px; }
@@ -85,11 +87,13 @@ api.value = saved || "http://localhost:8000";
 const map = L.map("map").setView([49.87, 8.65], 13);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
-const gpsLayer = L.layerGroup().addTo(map), routeLayer = L.layerGroup().addTo(map);
-L.control.layers(null, { "GPS observations": gpsLayer, "Predicted route (HMM)": routeLayer }, { collapsed: false }).addTo(map);
+const roadLayer = L.layerGroup().addTo(map), gpsLayer = L.layerGroup().addTo(map), routeLayer = L.layerGroup().addTo(map);
+L.control.layers(null, { "Road network (from .nodes/.arcs)": roadLayer, "GPS observations": gpsLayer,
+                         "Predicted route (HMM)": routeLayer }, { collapsed: false }).addTo(map);
 const legend = L.control({ position: "bottomleft" });
 legend.onAdd = () => { const d = L.DomUtil.create("div", "legend");
-  d.innerHTML = '<b>Legend</b><br><span class="sw" style="background:#1f4fd1"></span>GPS observations<br>' +
+  d.innerHTML = '<b>Legend</b><br><span class="sw" style="background:#9aa3b2"></span>Road network<br>' +
+                '<span class="sw" style="background:#1f4fd1"></span>GPS observations<br>' +
                 '<span class="sw" style="background:#d1361f"></span>Predicted route (HMM)<br>' +
                 '<span class="sw" style="background:#14804a"></span>Start &nbsp;<span class="sw" style="background:#000"></span>End';
   return d; };
@@ -119,20 +123,33 @@ async function loadTrips() {
   } catch (e) { setStatus(`<span style="color:#d1361f">Cannot reach API: ${e.message}</span>`); }
 }
 
+let runSeq = 0;
 async function runTrip(id) {
+  const my = ++runSeq;  // if the evaluator clicks another trip, only the latest request is drawn
   document.querySelectorAll(".trip").forEach(b => b.classList.toggle("active", b.dataset.id === id));
-  setStatus(`<span class="spin"></span> running pipeline for trip ${id}…`);
+  setStatus(`<span class="spin"></span> sent trip <b>${id}</b> to the API · running the prediction pipeline…`);
+  const ctrl = new AbortController(), timer = setTimeout(() => ctrl.abort(), 180000);
   try {
     const r = await fetch(base() + "/predict", { method: "POST", headers: { "Content-Type": "application/json" },
-                                                body: JSON.stringify({ trip_id: id }) });
-    if (!r.ok) throw new Error("HTTP " + r.status + " " + (await r.text()));
-    render(await r.json());
-    setStatus(`Trip ${id} done.`);
-  } catch (e) { setStatus(`<span style="color:#d1361f">Error: ${e.message}</span>`); }
+                                                body: JSON.stringify({ trip_id: id }), signal: ctrl.signal });
+    if (!r.ok) {
+      let msg = await r.text();
+      try { msg = JSON.parse(msg).detail || msg; } catch (e) {}
+      throw new Error("HTTP " + r.status + " " + msg);
+    }
+    const res = await r.json();
+    if (my !== runSeq) return;
+    render(res);
+    setStatus(`Trip <b>${id}</b> done · ${res.n_fixes.toLocaleString()} GPS fixes processed on the server in ${res.timings_s.total_s.toFixed(2)} s.`);
+  } catch (e) {
+    if (my !== runSeq) return;
+    setStatus(`<span style="color:#d1361f">Error for trip ${id}: ${e.name === "AbortError" ? "no reply from the API within 180 s" : e.message}</span>`);
+  } finally { clearTimeout(timer); }
 }
 
 function render(res) {
-  gpsLayer.clearLayers(); routeLayer.clearLayers();
+  roadLayer.clearLayers(); gpsLayer.clearLayers(); routeLayer.clearLayers();
+  (res.road_network || []).forEach(seg => L.polyline(seg, { color: "#9aa3b2", weight: 1.5, opacity: 0.7, interactive: false }).addTo(roadLayer));
   res.gps.forEach((p, i) => L.circleMarker(p, { radius: 2.5, color: "#1f4fd1", weight: 0, fillOpacity: 0.85 }).addTo(gpsLayer));
   res.predicted_route.forEach(seg => L.polyline(seg, { color: "#d1361f", weight: 5, opacity: 0.85 }).addTo(routeLayer));
   if (res.gps.length) {

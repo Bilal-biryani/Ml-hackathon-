@@ -120,7 +120,7 @@ Double-click `index.html`. In the page, type `http://LAPTOP1_IP:8000` into **API
 1. **API address** must be `http://LAPTOP1_IP:8000`, including `http://` and `:8000`. It is remembered in the browser.
 2. Click **Connect and load trips**. The status line shows `Connected · model LightGBM · 10 trips`, and the left panel lists the 10 trips.
 3. Click a trip. The status shows `running pipeline for trip …`, and after about 1–5 seconds:
-   - **Map:** blue dots are the GPS observations, the red line is the predicted route (HMM/Viterbi), green is start and black is end. The layer control (top right) toggles the layers, and the legend is bottom left.
+   - **Map:** grey lines are the road network near the trip, blue dots are the GPS observations, the red line is the predicted route (HMM/Viterbi), green is start and black is end. The layer control (top right) toggles the layers, and the legend is bottom left.
    - **Cards:** Top-1 accuracy (HMM), route continuity, route F1, number of GPS fixes and server time. The small text under each card is the classifier-only value for comparison.
    - **Table:** classifier-only vs classifier + HMM for Top-1 accuracy, continuity, route precision, recall and F1, plus timings.
 4. All metrics are computed **on Laptop 1** against its private reference route. The UI never receives the reference route.
@@ -171,7 +171,7 @@ Record results here while testing:
 | `/trips` → `"count":0` | Laptop 1 has no trips in `data\eval\` | On Laptop 1, copy the trip folders into `data\eval\` and restart the API |
 | UI: `Error: HTTP 404` on a trip | Trip id not on the server | Click **Connect** again to reload the list |
 | UI: `Error: HTTP 500` | Server error on Laptop 1 | Read the traceback in Laptop 1's CMD window and report it |
-| Map background grey, but route visible | No internet on Laptop 2 (tiles come from OpenStreetMap) | Connect Laptop 2 to the internet; the results are still valid |
+| Map background grey, but roads and route visible | No internet on Laptop 2 (tiles come from OpenStreetMap) | Fine for the demo: the roads, GPS and route come from the API. Connect to the internet for the street background. |
 | `start_ui.bat`: "port 5500 already in use" | Old server still running | Close the old "PathSnap UI server" window, or run `python -m http.server 5501` and open `http://localhost:5501` |
 | `python` not recognised | Python not installed or not on PATH | Use option 4b (open `index.html` directly) |
 | IP changed (hotspot reconnected) | DHCP gave Laptop 1 a new IP | Run `ipconfig` on Laptop 1 again and re-enter the new address in the UI |

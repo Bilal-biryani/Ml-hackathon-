@@ -448,17 +448,23 @@ story.append(PageBreak())
 
 # ----------------------------------------------------------------------------- 7 API / UI
 h1("7. API, UI and Deployment")
-p("<b>Laptop 1</b> runs the FastAPI service (api/main.py): <i>uvicorn api.main:app --host 0.0.0.0 --port 8000</i>. "
+p("<b>Laptop 1</b> runs the FastAPI service (api/main.py), started with start_api.bat, which calls "
+  "<i>uvicorn api.main:app --host 0.0.0.0 --port 8000</i> and prints the laptop's IP addresses. "
   "At start-up it loads the final model (models/final_model.joblib), the feature list and the decoder configuration "
   "(models/hmm_config.json). It serves the trips found in data/eval/. <b>GET /trips</b> lists them. "
   "<b>POST /predict</b> {trip_id} runs cleaning &rarr; candidates &rarr; features &rarr; classifier &rarr; "
   "HMM/Viterbi &rarr; route filling, then scores the prediction against the reference route <i>on the server</i>. "
   "The response contains the GPS points, predicted route polylines, predicted arc per fix, the metrics "
   "(classifier-only vs HMM) and timings. Reference arcs are never returned. Every request is logged on the "
-  "console with the client IP, trip id, Top-1 accuracy and latency.")
+  "console with the client IP, trip id, Top-1 accuracy and latency. For robustness the server finds the trip "
+  "folders even when they are handed over inside an extra folder, accepts files that are not named after the trip, "
+  "rejects invalid trip ids (400/404), returns the prediction without metrics if a reference file is missing or "
+  "empty, and reports any pipeline error to the UI instead of stopping. It was run on all 80 training trips and "
+  "the 10 student-test trips without a failure (largest trip under 4 s).")
 p("<b>Laptop 2</b> serves ui/index.html (<i>python -m http.server 5500</i>). The evaluator enters Laptop 1's "
-  "address, the UI lists the ten trips, and selecting one calls /predict and draws the GPS fixes and predicted "
-  "route on a Leaflet map, with the metrics table.")
+  "address, the UI lists the ten trips, and selecting one calls /predict and draws the road network near the trip "
+  "(from .nodes/.arcs), the GPS fixes and the predicted route on a Leaflet map, with the metrics table. If the "
+  "evaluator clicks a second trip before the first finishes, only the latest result is drawn.")
 img(F / "ui_screenshot.png", 16, "Evaluator UI showing a student-test trip served by the API.")
 api_log = config.RESULTS_DIR / "logs" / "api_final_check.log"
 if api_log.exists():

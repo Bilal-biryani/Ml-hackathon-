@@ -1,4 +1,10 @@
 {
+  "trips_by_region": {
+    "Europe/Africa": 68,
+    "Americas": 11,
+    "Asia/Oceania": 11
+  },
+  "max_trip_extent_km": 75.40427497844462,
   "trips": {
     "student_test": 10,
     "train": 80
