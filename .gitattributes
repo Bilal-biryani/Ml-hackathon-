@@ -1,0 +1,7 @@
+# never convert line endings inside binary artefacts
+*.pdf binary
+*.joblib binary
+*.pkl binary
+*.npy binary
+*.png binary
+*.zip binary
