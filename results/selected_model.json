@@ -1,0 +1,4 @@
+{
+ "selected_model": "LightGBM",
+ "criterion": "highest mean CV observation-level Top-1 accuracy (tie-break: CV macro F1)"
+}

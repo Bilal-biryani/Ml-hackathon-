@@ -1,0 +1,214 @@
+
+=== LogisticRegression ===
+  fold 0: macroF1=0.9002 top1=0.8767 logloss=0.1509 train_macroF1=0.9029 (2.4s)
+  fold 1: macroF1=0.8817 top1=0.8135 logloss=0.1699 train_macroF1=0.9118 (2.3s)
+  fold 2: macroF1=0.9033 top1=0.8718 logloss=0.1331 train_macroF1=0.9032 (2.4s)
+  fold 3: macroF1=0.9014 top1=0.8619 logloss=0.1242 train_macroF1=0.9006 (2.3s)
+  fold 4: macroF1=0.9147 top1=0.8894 logloss=0.1396 train_macroF1=0.8974 (2.2s)
+model                                                   LogisticRegression
+family                                                              Linear
+config                    StandardScaler + L2, C=1.0, lbfgs, max_iter=1000
+cv_macro_f1                                                       0.900236
+cv_macro_f1_std                                                   0.011875
+cv_top1                                                           0.862676
+cv_top1_std                                                       0.029245
+cv_log_loss                                                       0.143527
+cv_continuity                                                     0.901628
+cv_precision                                                      0.906191
+cv_recall                                                         0.894705
+st_macro_f1                                                       0.903337
+st_precision                                                      0.903732
+st_recall                                                         0.902943
+st_top1                                                           0.861025
+st_log_loss                                                        0.13137
+st_continuity                                                     0.916821
+st_route_f1                                                       0.886704
+st_decision_macro_f1                                              0.919027
+st_candidate_miss_rate                                            0.001307
+train_time_s                                                      2.916592
+inference_ms_per_fix                                              0.000939
+mean_fold_fit_s                                                   2.314396
+
+=== GaussianNB ===
+  fold 0: macroF1=0.8488 top1=0.8559 logloss=0.5257 train_macroF1=0.8398 (0.3s)
+  fold 1: macroF1=0.8316 top1=0.8092 logloss=0.5484 train_macroF1=0.8519 (0.3s)
+  fold 2: macroF1=0.8349 top1=0.8512 logloss=0.5804 train_macroF1=0.8376 (0.3s)
+  fold 3: macroF1=0.8461 top1=0.8449 logloss=0.4248 train_macroF1=0.8393 (0.3s)
+  fold 4: macroF1=0.8350 top1=0.8649 logloss=0.7043 train_macroF1=0.8397 (0.3s)
+model                             GaussianNB
+family                         Probabilistic
+config                    var_smoothing=1e-9
+cv_macro_f1                         0.839272
+cv_macro_f1_std                     0.007637
+cv_top1                              0.84519
+cv_top1_std                         0.021392
+cv_log_loss                         0.556735
+cv_continuity                       0.890002
+cv_precision                        0.805792
+cv_recall                           0.895111
+st_macro_f1                         0.832404
+st_precision                        0.794186
+st_recall                           0.901344
+st_top1                             0.838394
+st_log_loss                         0.570988
+st_continuity                       0.911127
+st_route_f1                         0.871531
+st_decision_macro_f1                0.905778
+st_candidate_miss_rate              0.001307
+train_time_s                        0.383596
+inference_ms_per_fix                0.002662
+mean_fold_fit_s                     0.318752
+
+=== KNN ===
+  fold 0: macroF1=0.9124 top1=0.8761 logloss=0.1419 train_macroF1=1.0000 (0.1s)
+  fold 1: macroF1=0.8888 top1=0.8152 logloss=0.1832 train_macroF1=1.0000 (0.1s)
+  fold 2: macroF1=0.9058 top1=0.8658 logloss=0.1384 train_macroF1=1.0000 (0.1s)
+  fold 3: macroF1=0.9081 top1=0.8544 logloss=0.1134 train_macroF1=1.0000 (0.1s)
+  fold 4: macroF1=0.9262 top1=0.8944 logloss=0.1340 train_macroF1=1.0000 (0.1s)
+model                                                                   KNN
+family                                                       Instance-based
+config                    k=50, distance-weighted, scaled, fit on 100k-r...
+cv_macro_f1                                                        0.908253
+cv_macro_f1_std                                                    0.013475
+cv_top1                                                            0.861175
+cv_top1_std                                                        0.029636
+cv_log_loss                                                        0.142207
+cv_continuity                                                      0.906459
+cv_precision                                                       0.921454
+cv_recall                                                          0.896378
+st_macro_f1                                                        0.911592
+st_precision                                                       0.920808
+st_recall                                                          0.902966
+st_top1                                                            0.861705
+st_log_loss                                                        0.123603
+st_continuity                                                      0.918033
+st_route_f1                                                        0.894093
+st_decision_macro_f1                                               0.919424
+st_candidate_miss_rate                                             0.001307
+train_time_s                                                       0.109999
+inference_ms_per_fix                                               0.505852
+mean_fold_fit_s                                                    0.091866
+
+=== RandomForest ===
+  fold 0: macroF1=0.9350 top1=0.8967 logloss=0.0904 train_macroF1=0.9709 (98.9s)
+  fold 1: macroF1=0.9034 top1=0.8321 logloss=0.1227 train_macroF1=0.9748 (94.3s)
+  fold 2: macroF1=0.9306 top1=0.8841 logloss=0.0877 train_macroF1=0.9714 (93.9s)
+  fold 3: macroF1=0.9353 top1=0.8803 logloss=0.0718 train_macroF1=0.9681 (96.6s)
+  fold 4: macroF1=0.9407 top1=0.9063 logloss=0.0846 train_macroF1=0.9706 (92.2s)
+model                                                         RandomForest
+family                                                  Ensemble (bagging)
+config                    200 trees, min_samples_leaf=5, max_features=sqrt
+cv_macro_f1                                                       0.929009
+cv_macro_f1_std                                                   0.014749
+cv_top1                                                           0.879906
+cv_top1_std                                                       0.028663
+cv_log_loss                                                       0.091436
+cv_continuity                                                     0.920369
+cv_precision                                                      0.936392
+cv_recall                                                         0.922104
+st_macro_f1                                                       0.932233
+st_precision                                                      0.938035
+st_recall                                                         0.926659
+st_top1                                                           0.885224
+st_log_loss                                                       0.082102
+st_continuity                                                     0.931667
+st_route_f1                                                       0.923996
+st_decision_macro_f1                                              0.933193
+st_candidate_miss_rate                                            0.001307
+train_time_s                                                    121.975839
+inference_ms_per_fix                                              0.019869
+mean_fold_fit_s                                                  95.173135
+
+=== ExtraTrees ===
+  fold 0: macroF1=0.9303 top1=0.8898 logloss=0.0962 train_macroF1=0.9496 (39.9s)
+  fold 1: macroF1=0.9006 top1=0.8276 logloss=0.1261 train_macroF1=0.9555 (38.4s)
+  fold 2: macroF1=0.9265 top1=0.8782 logloss=0.0935 train_macroF1=0.9506 (37.7s)
+  fold 3: macroF1=0.9273 top1=0.8685 logloss=0.0811 train_macroF1=0.9449 (41.3s)
+  fold 4: macroF1=0.9388 top1=0.9051 logloss=0.0911 train_macroF1=0.9479 (45.1s)
+model                                                           ExtraTrees
+family                                         Ensemble (randomised trees)
+config                    200 trees, min_samples_leaf=5, max_features=sqrt
+cv_macro_f1                                                       0.924693
+cv_macro_f1_std                                                   0.014329
+cv_top1                                                           0.873862
+cv_top1_std                                                        0.02923
+cv_log_loss                                                       0.097586
+cv_continuity                                                     0.912461
+cv_precision                                                      0.935435
+cv_recall                                                         0.914804
+st_macro_f1                                                       0.925161
+st_precision                                                      0.935194
+st_recall                                                         0.915796
+st_top1                                                           0.876392
+st_log_loss                                                       0.089027
+st_continuity                                                      0.92603
+st_route_f1                                                        0.90901
+st_decision_macro_f1                                              0.928022
+st_candidate_miss_rate                                            0.001307
+train_time_s                                                     60.194417
+inference_ms_per_fix                                              0.029085
+mean_fold_fit_s                                                  40.464119
+
+=== LightGBM ===
+C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\lightgbm\sklearn.py:1106: LGBMDeprecationWarning: The argument 'eval_set' is deprecated, use 'eval_X' and 'eval_y' instead.
+  eval_set = _validate_eval_set_Xy(eval_set=eval_set, eval_X=eval_X, eval_y=eval_y)
+  fold 0: macroF1=0.9359 top1=0.9008 logloss=0.0954 train_macroF1=0.9555 (10.4s)
+  fold 1: macroF1=0.9003 top1=0.8295 logloss=0.1265 train_macroF1=0.9631 (7.8s)
+  fold 2: macroF1=0.9306 top1=0.8849 logloss=0.0871 train_macroF1=0.9596 (7.8s)
+  fold 3: macroF1=0.9355 top1=0.8818 logloss=0.0712 train_macroF1=0.9527 (8.3s)
+  fold 4: macroF1=0.9378 top1=0.9040 logloss=0.0881 train_macroF1=0.9567 (7.4s)
+model                                                              LightGBM
+family                                                             Boosting
+config                    400 trees, lr=0.05, num_leaves=63, min_child_s...
+cv_macro_f1                                                        0.928024
+cv_macro_f1_std                                                    0.015712
+cv_top1                                                            0.880202
+cv_top1_std                                                        0.029945
+cv_log_loss                                                        0.093652
+cv_continuity                                                       0.92235
+cv_precision                                                       0.933568
+cv_recall                                                          0.922824
+st_macro_f1                                                        0.932236
+st_precision                                                       0.937079
+st_recall                                                          0.927553
+st_top1                                                            0.891287
+st_log_loss                                                        0.082177
+st_continuity                                                      0.933719
+st_route_f1                                                        0.921898
+st_decision_macro_f1                                               0.936742
+st_candidate_miss_rate                                             0.001307
+train_time_s                                                       9.698989
+inference_ms_per_fix                                               0.021557
+mean_fold_fit_s                                                     8.33653
+
+=== MLP ===
+  fold 0: macroF1=0.9257 top1=0.8907 logloss=0.1017 train_macroF1=0.9324 (26.1s)
+  fold 1: macroF1=0.8970 top1=0.8269 logloss=0.1333 train_macroF1=0.9417 (24.0s)
+  fold 2: macroF1=0.9218 top1=0.8803 logloss=0.0994 train_macroF1=0.9305 (24.0s)
+  fold 3: macroF1=0.9250 top1=0.8695 logloss=0.0820 train_macroF1=0.9301 (23.9s)
+  fold 4: macroF1=0.9360 top1=0.9059 logloss=0.0942 train_macroF1=0.9308 (23.9s)
+model                                                                   MLP
+family                                                       Neural network
+config                    (64,32) ReLU, Adam lr=1e-3, alpha=1e-4, batch ...
+cv_macro_f1                                                        0.921098
+cv_macro_f1_std                                                    0.014509
+cv_top1                                                            0.874651
+cv_top1_std                                                         0.02986
+cv_log_loss                                                        0.102129
+cv_continuity                                                      0.920139
+cv_precision                                                        0.93264
+cv_recall                                                          0.910724
+st_macro_f1                                                         0.92233
+st_precision                                                       0.930051
+st_recall                                                          0.915015
+st_top1                                                             0.87566
+st_log_loss                                                        0.091575
+st_continuity                                                      0.932888
+st_route_f1                                                        0.920676
+st_decision_macro_f1                                               0.927594
+st_candidate_miss_rate                                             0.001307
+train_time_s                                                      23.806701
+inference_ms_per_fix                                               0.003139
+mean_fold_fit_s                                                   24.381316
+
+Selected: LightGBM
