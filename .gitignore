@@ -1,0 +1,6 @@
+# raw and derived data (too large for git; see README)
+data/raw/
+data/processed/
+__pycache__/
+*.pyc
+.venv/
